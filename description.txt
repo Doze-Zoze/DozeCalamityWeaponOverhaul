@@ -1,0 +1,13 @@
+Reworks various Calamity melee weapons to be more interesting.
+
+Reworks:
+Anarchy Blade
+Carnage
+Devastation
+Devil's Devastation
+Exalted Oathblade
+Forbidden Oathblade
+Majestic Guard
+Swordsplosion
+Teardrop Cleaver
+Titan Arm

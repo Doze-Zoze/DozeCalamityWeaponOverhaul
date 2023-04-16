@@ -1,0 +1,4 @@
+displayName = Doze's Calamity Melee Reworks
+author = DozeZoze
+version = 0.3.1
+modReferences = CalamityMod
