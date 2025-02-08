@@ -1,13 +1,26 @@
-Reworks various Calamity melee weapons to be more interesting.
+Reworks various Calamity weapons to be more interesting and fun to use
 
-Reworks:
-Anarchy Blade
+== Melee Reworks ==
+Seashine Sword
+Teardrop Cleaver
+Tainted Blade
+Vein Burster
+Perfect Dark
 Carnage
-Devastation
-Devil's Devastation
-Exalted Oathblade
+Caustic Edge
+Submarine Shocker
 Forbidden Oathblade
 Majestic Guard
-Swordsplosion
-Teardrop Cleaver
+Catastrophe Claymore
+Anarchy Blade
 Titan Arm
+Exalted Oathblade
+Devastation
+Swordsplosion
+Devil's Devastation
+Violence
+
+== Summon Reworks ==
+Cosmic Immaterializer
+
+Also adds back Coldheart Icicle, but functioning more like a modern shortsword. Currently unobtainable.

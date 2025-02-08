@@ -1,0 +1,21 @@
+
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\tModLoader.targets" />
+  <PropertyGroup>
+    <AssemblyName>DozeCalamityWeaponOverhaul</AssemblyName>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Remove="Items\TerraEdge.png" />
+    <None Remove="Items\TerraEdgeBeam.png" />
+    <None Remove="Items\TerraEdgeSwordProj.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Reworks\Melee\DefiledGreatswordLine\TaintedBladeCausticEdge.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="CalamityMod">
+      <HintPath>..\..\ModReader\CalamityMod\CalamityMod.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+</Project>
