@@ -1,58 +1,50 @@
 using CalamityMod;
 using CalamityMod.Buffs.DamageOverTime;
-using CalamityMod.Items.SummonItems;
 using CalamityMod.Items.Weapons.Melee;
 using CalamityMod.Projectiles.Melee;
-using IL.Terraria.GameContent.NetModules;
-using Microsoft.CodeAnalysis.Diagnostics;
+using DozeCalamityWeaponOverhaul.Common;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using rail;
 using System;
 using System.Collections.Generic;
-using System.Drawing.Text;
-using System.Security.Permissions;
 using Terraria;
-using Terraria.Audio;
 using Terraria.DataStructures;
-using Terraria.GameContent.ItemDropRules;
+using Terraria.GameContent.Prefixes;
 using Terraria.ID;
 using Terraria.ModLoader;
 
-namespace carnageRework.Items.Reworks.DevilsDevastationLine
+namespace DozeCalamityWeaponOverhaul.Reworks.Melee.DevilsDevastationLine
 {
-    public class ExaltedOathbladeRework : GlobalItem
+    public class DevilsDevastationRework : GlobalItem
     {
 
         public override void SetDefaults(Item item)
         {
-            if (item.type == ModContent.ItemType<ExaltedOathblade>())
+            if (item.type == ModContent.ItemType<DevilsDevastation>())
             {
-                item.damage = 120;
-                item.useTime = 22;
+                item.damage = 666;
+                item.useTime = 19;
                 item.useAnimation = item.useTime;
                 item.useStyle = 1;
                 item.noMelee = true;
                 item.noUseGraphic = true;
                 item.knockBack = 6;
-                item.shoot = ModContent.ProjectileType<ExaltedOathbladeSwordProj>();
+                item.shoot = ModContent.ProjectileType<DevilsDevastationSwordProj>();
                 item.autoReuse = true;
-                item.scale = 2f;
+                PrefixLegacy.ItemSets.SwordsHammersAxesPicks[item.type] = true;
             }
         }
         public override void HoldItem(Item item, Player player)
         {
-            if (item.type == ModContent.ItemType<ExaltedOathblade>())
+            if (item.type == ModContent.ItemType<DevilsDevastation>())
             {
-                var cplayer = player.GetModPlayer<CarnagePlayer>();
+                var cplayer = player.GetModPlayer<WeaponOverhaulPlayer>();
                 cplayer.ExaltedChargeTime++;
             }
-
         }
-
         public override bool Shoot(Item item, Player player, EntitySource_ItemUse_WithAmmo source, Vector2 position, Vector2 velocity, int type, int damage, float knockback)
         {
-            if (item.type == ModContent.ItemType<ExaltedOathblade>())
+            if (item.type == ModContent.ItemType<DevilsDevastation>())
             {
                 if (player.altFunctionUse != 2)
                 {
@@ -70,7 +62,7 @@ namespace carnageRework.Items.Reworks.DevilsDevastationLine
         }
         public override bool AltFunctionUse(Item item, Player player)
         {
-            if (item.type == ModContent.ItemType<ExaltedOathblade>())
+            if (item.type == ModContent.ItemType<DevilsDevastation>())
             {
                 return true;
             }
@@ -78,7 +70,7 @@ namespace carnageRework.Items.Reworks.DevilsDevastationLine
         }
         public override bool CanUseItem(Item item, Player player)
         {
-            if (item.type == ModContent.ItemType<ExaltedOathblade>())
+            if (item.type == ModContent.ItemType<DevilsDevastation>())
             {
                 if (player.itemTime > 0)
                 {
@@ -87,7 +79,7 @@ namespace carnageRework.Items.Reworks.DevilsDevastationLine
                 for (int i = 0; i < 1000; i++)
                 {
                     var proj = Main.projectile[i];
-                    if (proj.type == ModContent.ProjectileType<ExaltedOathbladeSwordProj>() && proj.owner == player.whoAmI && proj.active)
+                    if (proj.type == ModContent.ProjectileType<DevilsDevastationSwordProj>() && proj.owner == player.whoAmI && proj.active)
                     {
                         return false;
                     }
@@ -101,14 +93,16 @@ namespace carnageRework.Items.Reworks.DevilsDevastationLine
 
     }
 
-    public class ExaltedOathbladeSwordProj : ModProjectile
+    public class DevilsDevastationSwordProj : ModProjectile
     {
         Vector2 angle = Vector2.Zero;
         private float timer = 0;
         private int swingWidth = 180;
-        private int swingTime = 22 * 4;//ModContent.GetModItem(ModContent.ItemType<ExaltedOathblade>()).Item.useTime;
+        private int swingTime = 23 * 4;// ModContent.GetModItem(ModContent.ItemType<DevilsDevastation>()).Item.useTime*4;
         public bool old = false;
-        public override string Texture => ModContent.GetModItem(ModContent.ItemType<ExaltedOathblade>()).Texture;
+        private bool ChargedAttack = false;
+        private int projType;
+        public override string Texture => ModContent.GetModItem(ModContent.ItemType<DevilsDevastation>()).Texture;
         public override void SetStaticDefaults()
         {
             CalamityLists.pierceResistExceptionList.Add(Projectile.type);
@@ -117,13 +111,13 @@ namespace carnageRework.Items.Reworks.DevilsDevastationLine
         public override void SetDefaults()
         {
             Projectile.timeLeft = 2400;
-            Projectile.width = ModContent.GetModItem(ModContent.ItemType<ExaltedOathblade>()).Item.width;
-            Projectile.height = ModContent.GetModItem(ModContent.ItemType<ExaltedOathblade>()).Item.height;
+            Projectile.width = ModContent.GetModItem(ModContent.ItemType<DevilsDevastation>()).Item.width;
+            Projectile.height = ModContent.GetModItem(ModContent.ItemType<DevilsDevastation>()).Item.height;
             Projectile.friendly = true;
             Projectile.penetrate = -1;
             Projectile.localNPCHitCooldown = -1;
             Projectile.usesLocalNPCImmunity = true;
-            Projectile.extraUpdates = 0;
+            Projectile.extraUpdates = 1;
             Projectile.aiStyle = -2;
             Projectile.DamageType = DamageClass.Melee;
             Projectile.tileCollide = false;
@@ -135,11 +129,15 @@ namespace carnageRework.Items.Reworks.DevilsDevastationLine
         {
 
             var player = Main.player[Projectile.owner];
-            var modplayer = player.GetModPlayer<CarnagePlayer>();
+            var modplayer = player.GetModPlayer<WeaponOverhaulPlayer>();
             angle = (player.Center - Main.MouseWorld).SafeNormalize(Vector2.One);
             Projectile.velocity = Vector2.Zero;
-
             Projectile.extraUpdates = 3;
+            if (modplayer.ExaltedChargeTime < modplayer.ExaltedChargeMax && Projectile.ai[0] == 0)
+            {
+
+                Projectile.extraUpdates = 3;
+            }
             if (angle.X < 0)
             {
                 player.direction = 1;
@@ -150,6 +148,39 @@ namespace carnageRework.Items.Reworks.DevilsDevastationLine
                 player.direction = -1;
                 Projectile.spriteDirection = -1;
             }
+            if (modplayer.swingNum % 2 == 1 && Projectile.ai[0] == 0)
+            {
+                Projectile.spriteDirection *= -1;
+            }
+            if (modplayer.swingNum == 0)
+            {
+                modplayer.swingNum++;
+            }
+            else if (modplayer.swingNum == 1)
+            {
+                modplayer.swingNum = 0;
+            }
+            if (false)
+            {
+                var speed = Main.player[Projectile.owner].GetAttackSpeed<MeleeDamageClass>();
+                if (speed > 3f)
+                    speed = 3f;
+
+                if (speed != 0f)
+                    speed = 1f / speed;
+
+                swingTime = (int)(swingTime * speed);
+                if (swingTime < 1)
+                {
+                    swingTime = 1;
+                }
+            }
+            if (true)
+            {
+                if (player.meleeScaleGlove) Projectile.scale *= 1.1f;
+                Projectile.scale *= player.HeldItem.scale;
+            }
+
         }
 
         public override void AI()
@@ -160,13 +191,20 @@ namespace carnageRework.Items.Reworks.DevilsDevastationLine
             {
                 adust = MathHelper.ToRadians(-45);
             }
-            var cplayer = player.GetModPlayer<CarnagePlayer>();
+            var cplayer = player.GetModPlayer<WeaponOverhaulPlayer>();
             if (cplayer.ExaltedChargeTime >= cplayer.ExaltedChargeMax)
             {
                 ChargedAttack = true;
             }
             cplayer.ExaltedChargeTime = 0;
-            player.direction = Projectile.spriteDirection;
+            if (cplayer.swingNum % 2 == 0 && Projectile.ai[0] == 0)
+            {
+                player.direction = -Projectile.spriteDirection;
+            }
+            else
+            {
+                player.direction = Projectile.spriteDirection;
+            }
             var armCenter = player.Center - new Vector2(5 * player.direction, 2);
 
             if (Projectile.ai[0] == 0)  // lclick
@@ -174,15 +212,46 @@ namespace carnageRework.Items.Reworks.DevilsDevastationLine
 
                 if (ChargedAttack)
                 {
-                    Projectile.Center = armCenter - (angle * 50 * (1 + (Projectile.scale - 1) * 0.75f)).RotatedBy(player.direction * -MathHelper.ToRadians(timer * (270 / swingTime) - 270 / 2));
-                    Projectile.rotation = angle.RotatedBy(player.direction * -MathHelper.ToRadians(timer * (270 / swingTime) - 270 / 2)).ToRotation() + adust;
-                    shootCheck(Projectile.spriteDirection, 8, 1.15f, ModContent.ProjectileType<ExaltedOathbladeBeam>(), damagemod: 0.25f);
+                    var angle2 = MathHelper.ToRadians(-MathHelper.SmoothStep(-270 / 2, 270 / 2, timer / swingTime));
+                    Projectile.Center = armCenter - (angle * 80 * (1 + (Projectile.scale - 1) * 0.75f)).RotatedBy(Projectile.spriteDirection * angle2);
+                    Projectile.rotation = angle.RotatedBy(Projectile.spriteDirection * angle2).ToRotation() + adust;
+                    shootCheck(Projectile.spriteDirection, 9, 1f, ModContent.ProjectileType<ExaltedOathbladeBeam>(), damagemod: 0.25f);
+                    shootAboveBelow();
                 }
                 else
                 {
-                    Projectile.Center = armCenter - (angle * 50 * (1 + (Projectile.scale - 1) * 0.75f)).RotatedBy(player.direction * -MathHelper.ToRadians(timer * (swingWidth / swingTime) - swingWidth / 2));
-                    Projectile.rotation = angle.RotatedBy(player.direction * -MathHelper.ToRadians(timer * (swingWidth / swingTime) - swingWidth / 2)).ToRotation() + adust;
-                    shootCheck(Projectile.spriteDirection, 3, damagemod: 0.33f);
+
+                    var modplayer = player.GetModPlayer<WeaponOverhaulPlayer>();
+                    var angle2 = MathHelper.ToRadians(-MathHelper.SmoothStep(-swingWidth / 2, swingWidth / 2, timer / swingTime));
+                    Projectile.Center = armCenter - (angle * 80 * (1 + (Projectile.scale - 1) * 0.75f)).RotatedBy(Projectile.spriteDirection * angle2);
+                    Projectile.rotation = angle.RotatedBy(Projectile.spriteDirection * angle2).ToRotation() + adust;
+                    if (timer == swingTime / 2)
+                    {
+
+
+                        projType = ModContent.ProjectileType<SightSoul>();
+                        shootCheck(Projectile.spriteDirection, 0, 1.15f, type: projType, damagemod: 0.2f);
+
+                        projType = ModContent.ProjectileType<MightSoul>();
+                        shootCheck(Projectile.spriteDirection, 0, 1.15f, type: projType, damagemod: 0.2f);
+
+                        projType = ModContent.ProjectileType<FrightSoul>();
+                        shootCheck(Projectile.spriteDirection, 0, 1.15f, type: projType, damagemod: 0.2f);
+                        projType = ModContent.ProjectileType<NightSoul>();
+                        shootCheck(Projectile.spriteDirection, 0, 1.15f, type: projType, damagemod: 0.2f);
+
+                        projType = ModContent.ProjectileType<LightSoul>();
+                        shootCheck(Projectile.spriteDirection, 0, 1.15f, type: projType, damagemod: 0.2f);
+
+                        projType = ModContent.ProjectileType<FlightSoul>();
+                        shootCheck(Projectile.spriteDirection, 0, 1.45f, type: projType, damagemod: 0.2f);
+
+                    }
+                    else
+                    {
+                        shootCheck(Projectile.spriteDirection, 2, damagemod: 0.33f);
+                    }
+
                 }
 
 
@@ -205,6 +274,10 @@ namespace carnageRework.Items.Reworks.DevilsDevastationLine
                         Projectile.timeLeft = 44 * 4;
                         timer = 0;
                         Projectile.damage *= 2;
+                    }
+                    if (Projectile.timeLeft % (12 * 4) == 0)
+                    {
+                        Projectile.NewProjectile(Projectile.GetSource_FromThis(), player.Center, Vector2.Zero, ModContent.ProjectileType<ForbiddenOathbladeBeam>(), (int)(Projectile.damage * 0.5f * 0.33f), Projectile.knockBack, Projectile.owner);
                     }
                     if (Projectile.timeLeft > 80)
                     {
@@ -269,11 +342,13 @@ namespace carnageRework.Items.Reworks.DevilsDevastationLine
             }
             timer++;
             old = true;
-            player.SetCompositeArmFront(true, Player.CompositeArmStretchAmount.Full, (armCenter - Projectile.Center).ToRotation() + MathHelper.ToRadians(90));
+
+            var armDir = armCenter - Projectile.Center;
+            armDir.Y *= player.gravDir;
+            player.SetCompositeArmFront(true, Player.CompositeArmStretchAmount.Full, armDir.ToRotation() + MathHelper.ToRadians(90));
 
 
         }
-        private bool ChargedAttack = false;
         public override bool PreDraw(ref Color lightColor)
         {
             if (Projectile.ai[0] == 1 && ChargedAttack)
@@ -300,12 +375,31 @@ namespace carnageRework.Items.Reworks.DevilsDevastationLine
         {
             if (type == 0)
             {
+
                 type = ModContent.ProjectileType<ForbiddenOathbladeBeam>();
+
+
+            }
+            if (amount == 0)
+            {
+                Projectile.NewProjectile(Projectile.GetSource_FromThis(), Projectile.Center, (Projectile.rotation + negate * MathHelper.ToRadians(45 - negate * 90)).ToRotationVector2() * 20 * velocitymod, type, (int)(Projectile.damage * damagemod), Projectile.knockBack, Projectile.owner);
             }
             amount += 1;
             if (timer % (swingTime / amount) == 0 && timer > 0 && timer < swingTime - swingTime / amount / 2)
             {
                 Projectile.NewProjectile(Projectile.GetSource_FromThis(), Projectile.Center, (Projectile.rotation + negate * MathHelper.ToRadians(45 - negate * 90)).ToRotationVector2() * 20 * velocitymod, type, (int)(Projectile.damage * damagemod), Projectile.knockBack, Projectile.owner);
+            }
+        }
+
+        private void shootAboveBelow()
+        {
+            var amount = 5;
+            if (timer % (swingTime / amount) == 0 && timer > 0 && timer < swingTime - swingTime / amount / 2)
+            {
+                var starpos = new Vector2(Main.MouseWorld.X + Main.rand.Next(-400, 400 + 1), Main.MouseWorld.Y - Main.screenHeight - 160);
+                Projectile.NewProjectile(Projectile.GetSource_FromThis(), starpos, starpos.DirectionTo(Main.MouseWorld) * Main.rand.Next(75, 125) / 100 * 15f, ModContent.ProjectileType<DevilsDevastationBeam>(), (int)(Projectile.damage * 1.15f), Projectile.knockBack, Projectile.owner, 0);
+                starpos = new Vector2(Main.MouseWorld.X + Main.rand.Next(-400, 400 + 1), Main.MouseWorld.Y + Main.screenHeight + 160);
+                Projectile.NewProjectile(Projectile.GetSource_FromThis(), starpos, starpos.DirectionTo(Main.MouseWorld) * Main.rand.Next(75, 125) / 100 * 15f, ModContent.ProjectileType<DevilsDevastationBeam>(), (int)(Projectile.damage * 1.15f), Projectile.knockBack, Projectile.owner, 0);
             }
         }
         public override void ModifyDamageHitbox(ref Rectangle hitbox)
@@ -317,10 +411,10 @@ namespace carnageRework.Items.Reworks.DevilsDevastationLine
 
         }
 
-        public override void OnHitNPC(NPC target, int damage, float knockback, bool crit)
+        public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone)
         {
             var player = Main.player[Projectile.owner];
-            var cplayer = player.GetModPlayer<CarnagePlayer>();
+            var cplayer = player.GetModPlayer<WeaponOverhaulPlayer>();
             if (!ChargedAttack && Projectile.ai[0] == 1)
             {
                 cplayer.DashFrames = 0;
@@ -338,90 +432,37 @@ namespace carnageRework.Items.Reworks.DevilsDevastationLine
         }
     }
 
-    public class ExaltedOathbladeBeam : ModProjectile
+    public class DevilsDevastationBeam : ModProjectile
     {
         public override void SetDefaults()
         {
-            Projectile.timeLeft = 120;
-            Projectile.width = 58;
-            Projectile.height = 58;
+            Projectile.timeLeft = 240;
+            Projectile.width = 60;
+            Projectile.height = 60;
             Projectile.friendly = true;
-            Projectile.penetrate = 4;
-            Projectile.localNPCHitCooldown = 20;
+            Projectile.penetrate = -1;
+            Projectile.localNPCHitCooldown = -1;
             Projectile.usesLocalNPCImmunity = true;
-            Projectile.extraUpdates = 0;
+            Projectile.extraUpdates = 8 - 1;
             Projectile.aiStyle = -2;
             Projectile.DamageType = DamageClass.Melee;
             Projectile.tileCollide = false;
-
         }
 
-        public override string Texture => ModContent.GetModProjectile(ModContent.ProjectileType<Oathblade>()).Texture;
-
-        private Vector2 mouse = Vector2.Zero;
+        public override string Texture => ModContent.GetModProjectile(ModContent.ProjectileType<DemonBlast>()).Texture;
 
         public override void OnSpawn(IEntitySource source)
         {
-            Projectile.rotation = Projectile.velocity.ToRotation() + MathHelper.ToRadians(90);
+            Projectile.rotation = Projectile.velocity.ToRotation() + MathHelper.ToRadians(45);
         }
         public override void AI()
         {
-
-            if (Projectile.timeLeft > 110)
-            {
-                Projectile.Opacity = (120 - Projectile.timeLeft) / 5f;
-            }
-            if (Projectile.timeLeft < 10)
-            {
-                Projectile.Opacity = Projectile.timeLeft / 10f;
-            }
-
-
-            if (Projectile.velocity.Length() < 1 && target == null)
-            {
-                NPC targetNPC = Projectile.FindTargetWithinRange(1600);
-                if (targetNPC != null) { target = targetNPC.whoAmI; }
-
-            }
-            if (target == null)
-            {
-                Projectile.velocity *= 0.95f;
-                Projectile.rotation += MathHelper.ToRadians(45 / 2);
-            }
-            else
-            {
-                Projectile.rotation += MathHelper.ToRadians(45);
-                if (Main.npc[(int)target].active == false)
-                {
-                    target = null;
-                }
-                else
-                {
-                    Projectile.velocity += Projectile.DirectionTo(Main.npc[(int)target].Center) * (0.25f + Projectile.velocity.Length() / 10f);
-                    if (Projectile.velocity.Length() > 30)
-                    {
-                        Projectile.velocity /= Projectile.velocity.Length() / 30;
-                    }
-                    Projectile.timeLeft = 110;
-                }
-            }
-
-        }
-
-        List<float> oldProjectileRot = new List<float>();
-        List<Vector2> oldProjectilePos = new List<Vector2>();
-        int? target = null;
-        public override bool PreDraw(ref Color lightColor)
-        {
-            Texture2D texture = ModContent.Request<Texture2D>(Texture).Value;
-            // Main.EntitySpriteDraw(texture, Projectile.position-Main.screenPosition, null, lightColor, Projectile.rotation, texture.Size() / 2, 1, SpriteEffects.None, 0);
-            int max = 6;
             while (oldProjectileRot.Count < max)
             {
                 oldProjectileRot.Add(0);
                 oldProjectilePos.Add(Vector2.Zero);
             }
-            if (!Main.gamePaused)
+            if (!Main.gamePaused && Projectile.timeLeft % 2 == 1)
             {
                 oldProjectileRot.Add(Projectile.rotation);
                 oldProjectilePos.Add(Projectile.Center);
@@ -431,6 +472,15 @@ namespace carnageRework.Items.Reworks.DevilsDevastationLine
                 oldProjectileRot.RemoveAt(0);
                 oldProjectilePos.RemoveAt(0);
             }
+        }
+
+        List<float> oldProjectileRot = new List<float>();
+        List<Vector2> oldProjectilePos = new List<Vector2>();
+        private int max = 5;
+        public override bool PreDraw(ref Color lightColor)
+        {
+            Texture2D texture = ModContent.Request<Texture2D>(Texture).Value;
+            // Main.EntitySpriteDraw(texture, Projectile.position-Main.screenPosition, null, lightColor, Projectile.rotation, texture.Size() / 2, 1, SpriteEffects.None, 0);
             for (int i = 0; i < oldProjectileRot.Count; i++)
             {
 
@@ -443,9 +493,9 @@ namespace carnageRework.Items.Reworks.DevilsDevastationLine
             Main.EntitySpriteDraw(texture, Projectile.Center - Main.screenPosition, null, Color.White * Projectile.Opacity, Projectile.rotation, texture.Size() / 2, Projectile.scale, SpriteEffects.None, 0);
             return false;
         }
-        public override void OnHitNPC(NPC target, int damage, float knockback, bool crit)
+        public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone)
         {
-            target.AddBuff(BuffID.Daybreak, 60);
+            target.AddBuff(ModContent.BuffType<GodSlayerInferno>(), 120);
 
         }
     }

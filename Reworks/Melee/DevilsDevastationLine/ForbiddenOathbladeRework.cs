@@ -1,22 +1,19 @@
 using CalamityMod;
-using CalamityMod.Items.SummonItems;
+using CalamityMod.Buffs.DamageOverTime;
 using CalamityMod.Items.Weapons.Melee;
 using CalamityMod.Projectiles.Melee;
-using Microsoft.CodeAnalysis.Diagnostics;
+using DozeCalamityWeaponOverhaul.Common;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using rail;
-using System;
 using System.Collections.Generic;
-using System.Security.Permissions;
 using Terraria;
 using Terraria.Audio;
 using Terraria.DataStructures;
-using Terraria.GameContent.ItemDropRules;
+using Terraria.GameContent.Prefixes;
 using Terraria.ID;
 using Terraria.ModLoader;
 
-namespace carnageRework.Items.Reworks.DevilsDevastationLine
+namespace DozeCalamityWeaponOverhaul.Reworks.Melee.DevilsDevastationLine
 {
     public class ForbiddenOathbladeRework : GlobalItem
     {
@@ -25,7 +22,7 @@ namespace carnageRework.Items.Reworks.DevilsDevastationLine
         {
             if (item.type == ModContent.ItemType<ForbiddenOathblade>())
             {
-                //item.damage = 50;
+                item.damage = 105;
                 item.useTime = 54;
                 item.useAnimation = item.useTime;
                 item.useStyle = 1;
@@ -34,7 +31,7 @@ namespace carnageRework.Items.Reworks.DevilsDevastationLine
                 item.knockBack = 6;
                 item.shoot = ModContent.ProjectileType<ForbiddenOathbladeSwordProj>();
                 item.autoReuse = true;
-                item.scale = 2f;
+                PrefixLegacy.ItemSets.SwordsHammersAxesPicks[item.type] = true;
             }
         }
 
@@ -62,7 +59,7 @@ namespace carnageRework.Items.Reworks.DevilsDevastationLine
             }
             /*if (item.type == ItemID.CopperShortsword)
             {
-                var cplayer = player.GetModPlayer<CarnagePlayer>();
+                var cplayer = player.GetModPlayer<WeaponOverhaulPlayer>();
                 cplayer.DashFrames = 60;
                 player.itemAnimation = 60;
                 player.itemTime = 60;
@@ -141,21 +138,42 @@ namespace carnageRework.Items.Reworks.DevilsDevastationLine
         {
 
             var player = Main.player[Projectile.owner];
-            var modplayer = player.GetModPlayer<CarnagePlayer>();
+            var modplayer = player.GetModPlayer<WeaponOverhaulPlayer>();
             angle = MathHelper.ToRadians(45 * 5.5f).ToRotationVector2();
             angle.X *= player.direction;
+            angle.Y *= player.gravDir;
             Projectile.velocity = Vector2.Zero;
 
             if (Projectile.ai[0] == 2)
             {
                 Projectile.extraUpdates = 3;
             }
+            if (false)
+            {
+                var speed = Main.player[Projectile.owner].GetAttackSpeed<MeleeDamageClass>();
+                if (speed > 3f)
+                    speed = 3f;
+
+                if (speed != 0f)
+                    speed = 1f / speed;
+
+                swingTime = (int)(swingTime * speed);
+                if (swingTime < 1)
+                {
+                    swingTime = 1;
+                }
+            }
+            if (true)
+            {
+                if (player.meleeScaleGlove) Projectile.scale *= 1.1f;
+                Projectile.scale *= player.HeldItem.scale;
+            }
         }
 
         public override void AI()
         {
             var player = Main.player[Projectile.owner];
-            var modplayer = player.GetModPlayer<CarnagePlayer>();
+            var modplayer = player.GetModPlayer<WeaponOverhaulPlayer>();
             if (angle.X < 0)
             {
                 player.direction = 1;
@@ -166,11 +184,11 @@ namespace carnageRework.Items.Reworks.DevilsDevastationLine
             }
             if (Projectile.ai[0] == 1)
             {
-                Projectile.spriteDirection = -1;
+                Projectile.spriteDirection = -1 * (int)player.gravDir;
             }
             else
             {
-                Projectile.spriteDirection = 1;
+                Projectile.spriteDirection = 1 * (int)player.gravDir;
             }
 
             float adust = MathHelper.ToRadians(90 + (45 + 90) * Projectile.spriteDirection);
@@ -178,7 +196,7 @@ namespace carnageRework.Items.Reworks.DevilsDevastationLine
             if (Projectile.ai[0] == 0)
             {
                 var angle2 = MathHelper.ToRadians(-MathHelper.SmoothStep(-swingWidth / 2, swingWidth / 2, timer / swingTime));
-                Projectile.Center = armCenter - (angle * 70 * (1 + (Projectile.scale - 1) * 0.75f)).RotatedBy(Projectile.spriteDirection * angle2);
+                Projectile.Center = armCenter - (angle * 60 * (1 + (Projectile.scale - 1) * 0.75f)).RotatedBy(Projectile.spriteDirection * angle2);
                 Projectile.rotation = angle.RotatedBy(Projectile.spriteDirection * angle2).ToRotation() + adust;
                 shootCheck();
 
@@ -194,7 +212,7 @@ namespace carnageRework.Items.Reworks.DevilsDevastationLine
             if (Projectile.ai[0] == 1)
             {
                 var angle2 = MathHelper.ToRadians(-MathHelper.SmoothStep(-swingWidth / 2, swingWidth / 2, timer / swingTime));
-                Projectile.Center = armCenter - (angle * 70 * (1 + (Projectile.scale - 1) * 0.75f)).RotatedBy(Projectile.spriteDirection * angle2);
+                Projectile.Center = armCenter - (angle * 60 * (1 + (Projectile.scale - 1) * 0.75f)).RotatedBy(Projectile.spriteDirection * angle2);
                 Projectile.rotation = angle.RotatedBy(Projectile.spriteDirection * angle2).ToRotation() + adust;
 
                 shootCheck(-1);
@@ -221,7 +239,7 @@ namespace carnageRework.Items.Reworks.DevilsDevastationLine
                         channel = false;
                         if (chargeTime >= chargeMax)
                         {
-                            var cplayer = player.GetModPlayer<CarnagePlayer>();
+                            var cplayer = player.GetModPlayer<WeaponOverhaulPlayer>();
                             cplayer.DashFrames = 35;
                             Projectile.damage *= 2;
                             player.itemAnimation = 44;
@@ -290,7 +308,9 @@ namespace carnageRework.Items.Reworks.DevilsDevastationLine
                 }
             }
             timer++;
-            player.SetCompositeArmFront(true, Player.CompositeArmStretchAmount.Full, (armCenter - Projectile.Center).ToRotation() + MathHelper.ToRadians(90));
+            var armDir = armCenter - Projectile.Center;
+            armDir.Y *= player.gravDir;
+            player.SetCompositeArmFront(true, Player.CompositeArmStretchAmount.Full, armDir.ToRotation() + MathHelper.ToRadians(90));
 
 
         }
@@ -321,8 +341,9 @@ namespace carnageRework.Items.Reworks.DevilsDevastationLine
         {
             if (timer % (swingTime / 6) == 0 && timer > 0 && timer < swingTime)
             {
+                negate *= (int)Main.player[Projectile.owner].gravDir;
                 int rand = Main.rand.Next(0, 3);
-                Projectile.NewProjectile(Projectile.GetSource_FromThis(), Projectile.Center, (Projectile.rotation + negate * MathHelper.ToRadians(45 - negate * 90)).ToRotationVector2() * 20, ModContent.ProjectileType<ForbiddenOathbladeBeam>(), (int)(Projectile.damage * 0.33f), Projectile.knockBack, Projectile.owner);
+                Projectile.NewProjectile(Projectile.GetSource_FromThis(), Projectile.Center, (Projectile.rotation + negate * MathHelper.ToRadians(45 - negate * 90)).ToRotationVector2() * 20, ModContent.ProjectileType<ForbiddenOathbladeBeam>(), (int)(Projectile.damage * 0.2f), Projectile.knockBack, Projectile.owner);
             }
         }
         public override void ModifyDamageHitbox(ref Rectangle hitbox)
@@ -334,8 +355,9 @@ namespace carnageRework.Items.Reworks.DevilsDevastationLine
 
         }
 
-        public override void OnHitNPC(NPC target, int damage, float knockback, bool crit)
+        public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone)
         {
+            target.AddBuff(ModContent.BuffType<BrimstoneFlames>(), 60 * 2);
         }
 
         public override void Kill(int timeLeft)
@@ -450,7 +472,7 @@ namespace carnageRework.Items.Reworks.DevilsDevastationLine
             //Main.EntitySpriteDraw(texture, Projectile.Center - Main.screenPosition, null, Color.White * Projectile.Opacity, Projectile.rotation, texture.Size() / 2, Projectile.scale, SpriteEffects.None, 0);
             return true;
         }
-        public override void OnHitNPC(NPC target, int damage, float knockback, bool crit)
+        public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone)
         {
             target.AddBuff(BuffID.ShadowFlame, 30);
         }

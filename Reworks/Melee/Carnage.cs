@@ -1,18 +1,22 @@
 using CalamityMod;
 using CalamityMod.Items.Weapons.Melee;
+using DozeCalamityWeaponOverhaul.Common;
 using Microsoft.Xna.Framework;
-using System.Security.Permissions;
 using Terraria;
 using Terraria.Audio;
 using Terraria.DataStructures;
-using Terraria.GameContent.ItemDropRules;
 using Terraria.ID;
 using Terraria.ModLoader;
 
-namespace carnageRework.Items.Reworks
+namespace DozeCalamityWeaponOverhaul.Reworks.Melee
 {
     public class CarnageRework : GlobalItem
     {
+        public override void SetStaticDefaults()
+        {
+
+            ItemID.Sets.ItemsThatAllowRepeatedRightClick[ModContent.ItemType<Carnage>()] = true;
+        }
         public override void SetDefaults(Item item)
         {
             if (item.type == ModContent.ItemType<Carnage>())
@@ -38,7 +42,7 @@ namespace carnageRework.Items.Reworks
         {
             if (item.type == ModContent.ItemType<Carnage>())
             {
-                var modplayer = player.GetModPlayer<CarnagePlayer>();
+                var modplayer = player.GetModPlayer<WeaponOverhaulPlayer>();
                 if (player.altFunctionUse == 2)
                 {
 
@@ -122,7 +126,7 @@ namespace carnageRework.Items.Reworks
         {
 
             var player = Main.player[Projectile.owner];
-            var modplayer = player.GetModPlayer<CarnagePlayer>();
+            var modplayer = player.GetModPlayer<WeaponOverhaulPlayer>();
             angle = (player.Center - Main.MouseWorld).SafeNormalize(Vector2.One);
             Projectile.velocity = Vector2.Zero;
             Projectile.damage = (int)(Projectile.damage * (1 + (float)modplayer.bloodCount / modplayer.bloodCountMax * 0.5f));
@@ -130,8 +134,8 @@ namespace carnageRework.Items.Reworks
             if (Projectile.ai[0] == 3)
             {
                 SoundEngine.PlaySound(SoundID.NPCDeath10);
-                Projectile.damage = Projectile.damage * 2;
-                player.Heal(2 * modplayer.bloodCount);
+                Projectile.damage = (int)(Projectile.damage * (0.5f + modplayer.bloodCount * 1f / modplayer.bloodCountMax));
+                player.Heal(3 * modplayer.bloodCount);
 
                 modplayer.bloodCount = 0;
             }
@@ -142,7 +146,7 @@ namespace carnageRework.Items.Reworks
         {
             var player = Main.player[Projectile.owner];
             float adust = MathHelper.ToRadians(45 + 180);
-            var modplayer = player.GetModPlayer<CarnagePlayer>();
+            var modplayer = player.GetModPlayer<WeaponOverhaulPlayer>();
 
             if (Projectile.ai[0] == 0)
             {
@@ -241,7 +245,9 @@ namespace carnageRework.Items.Reworks
                 }*/
             }
 
-            player.SetCompositeArmFront(true, Player.CompositeArmStretchAmount.Full, (player.Center - Projectile.Center).ToRotation() + MathHelper.ToRadians(90));
+            var armDir = player.Center - Projectile.Center;
+            armDir.Y *= player.gravDir;
+            player.SetCompositeArmFront(true, Player.CompositeArmStretchAmount.Full, armDir.ToRotation() + MathHelper.ToRadians(90));
 
 
         }
@@ -254,10 +260,10 @@ namespace carnageRework.Items.Reworks
             hitbox.Location = (center - new Vector2(hitbox.Width / 2, hitbox.Height / 2)).ToPoint();
 
         }
-        public override void OnHitNPC(NPC target, int damage, float knockback, bool crit)
+        public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone)
         {
             var player = Main.player[Projectile.owner];
-            var modplayer = player.GetModPlayer<CarnagePlayer>();
+            var modplayer = player.GetModPlayer<WeaponOverhaulPlayer>();
             if (hitstop == 0)
             {
                 pvel = player.velocity;

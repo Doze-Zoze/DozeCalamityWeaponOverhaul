@@ -1,35 +1,22 @@
 using CalamityMod;
-using CalamityMod.Buffs.DamageOverTime;
 using CalamityMod.Buffs.StatBuffs;
-using CalamityMod.Items.SummonItems;
 using CalamityMod.Items.Weapons.Melee;
-using CalamityMod.Projectiles.Melee;
-using CalamityMod.Projectiles.Typeless;
-using Microsoft.CodeAnalysis.Diagnostics;
+using DozeCalamityWeaponOverhaul.Common;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Mono.Cecil;
-using rail;
-using System;
 using System.Collections.Generic;
-using System.Drawing.Text;
-using System.Security.Permissions;
 using Terraria;
-using Terraria.Audio;
 using Terraria.DataStructures;
-using Terraria.GameContent.ItemDropRules;
 using Terraria.ID;
 using Terraria.ModLoader;
 
-namespace carnageRework.Items.Reworks.EarthLine
+namespace DozeCalamityWeaponOverhaul.Reworks.Melee.EarthLine
 {
     public class GuardParry : ModBuff
     {
-        public override string Texture => ModContent.GetModBuff(ModContent.BuffType<ElysianGuard>()).Texture;
+        public override string Texture => ModContent.GetModBuff(ModContent.BuffType<PhantomicShield>()).Texture;
         public override void SetStaticDefaults()
         {
-            DisplayName.SetDefault("Guardian Parry");
-            Description.SetDefault("Basically, you're melting");
             Main.debuff[Type] = false;
             Main.buffNoSave[Type] = true;
         }
@@ -38,32 +25,20 @@ namespace carnageRework.Items.Reworks.EarthLine
         {
         }
     }
-    public class MajesticGuardRework : GlobalItem
+    public class MajesticGuardRework : BaseMeleeItem
     {
+        public override int ItemType => ModContent.ItemType<MajesticGuard>();
+        public override int ProjectileType => ModContent.ProjectileType<MajesticGuardSwordProj>();
+        public override bool RClickAutoswing => true;
 
-        public override void SetDefaults(Item item)
+        /*public override void Defaults(Item item)
         {
-            if (item.type == ModContent.ItemType<MajesticGuard>())
-            {
-                //item.damage = 666;
-                //item.useTime = 19;
-                item.useAnimation = item.useTime;
-                item.useStyle = 1;
-                item.noMelee = true;
-                item.noUseGraphic = true;
-                //item.knockBack = 6;
-                item.shoot = ModContent.ProjectileType<MajesticGuardSwordProj>();
-                item.autoReuse = true;
-                //item.scale = 2f;
-                item.useTurn = false;
-            }
-        }
-        public override void HoldItem(Item item, Player player)
-        {
-        }
+            item.damage = 100;
+        }*/
+
         public override bool Shoot(Item item, Player player, EntitySource_ItemUse_WithAmmo source, Vector2 position, Vector2 velocity, int type, int damage, float knockback)
         {
-            if (item.type == ModContent.ItemType<MajesticGuard>())
+            if (item.type == ItemType)
             {
                 if (player.altFunctionUse != 2)
                 {
@@ -74,7 +49,7 @@ namespace carnageRework.Items.Reworks.EarthLine
                 else
                 {
                     Projectile.NewProjectile(source, position, velocity, type, damage, knockback, player.whoAmI, 1);
-                    player.GetModPlayer<CarnagePlayer>().ParryCooldown = 60 * 5;
+                    player.GetModPlayer<WeaponOverhaulPlayer>().ParryCooldown = 60 * 5;
                     return false;
                 }
             }
@@ -82,7 +57,7 @@ namespace carnageRework.Items.Reworks.EarthLine
         }
         public override bool AltFunctionUse(Item item, Player player)
         {
-            if (item.type == ModContent.ItemType<MajesticGuard>())
+            if (item.type == ItemType)
             {
                 return true;
             }
@@ -90,7 +65,7 @@ namespace carnageRework.Items.Reworks.EarthLine
         }
         public override bool CanUseItem(Item item, Player player)
         {
-            if (item.type == ModContent.ItemType<MajesticGuard>())
+            if (item.type == ItemType)
             {
                 if (player.itemTime > 0)
                 {
@@ -99,13 +74,13 @@ namespace carnageRework.Items.Reworks.EarthLine
                 for (int i = 0; i < 1000; i++)
                 {
                     var proj = Main.projectile[i];
-                    if (proj.type == ModContent.ProjectileType<MajesticGuardSwordProj>() && proj.owner == player.whoAmI && proj.active)
+                    if (proj.type == ProjectileType && proj.owner == player.whoAmI && proj.active)
                     {
                         return false;
                     }
 
                 }
-                if (player.GetModPlayer<CarnagePlayer>().ParryCooldown > 0 && player.altFunctionUse == 2) return false;
+                if (player.GetModPlayer<WeaponOverhaulPlayer>().ParryCooldown > 0 && player.altFunctionUse == 2) return false;
 
                 item.useStyle = ItemUseStyleID.Shoot;
             }
@@ -114,62 +89,26 @@ namespace carnageRework.Items.Reworks.EarthLine
 
     }
 
-    public class MajesticGuardSwordProj : ModProjectile
+    public class MajesticGuardSwordProj : BaseMeleeSwing
     {
-        Vector2 angle = Vector2.Zero;
-        private float timer = 0;
-        private int swingWidth = 180 + 45;
-        private int swingTime = ModContent.GetModItem(ModContent.ItemType<MajesticGuard>()).Item.useTime;
+        public override int swingWidth => 180 + 45;
         public bool old = false;
         private bool parry = false;
-        private int projType;
         public override string Texture => ModContent.GetModItem(ModContent.ItemType<MajesticGuard>()).Texture;
 
-        public override void SetStaticDefaults()
-        {
-            CalamityLists.pierceResistExceptionList.Add(Projectile.type);
-            CalamityLists.projectileDestroyExceptionList.Add(Projectile.type);
-        }
-        public override void SetDefaults()
-        {
-            Projectile.timeLeft = 60 * 3;
-            Projectile.width = ModContent.GetModItem(ModContent.ItemType<MajesticGuard>()).Item.width;
-            Projectile.height = ModContent.GetModItem(ModContent.ItemType<MajesticGuard>()).Item.height;
-            Projectile.friendly = true;
-            Projectile.penetrate = -1;
-            Projectile.localNPCHitCooldown = -1;
-            Projectile.usesLocalNPCImmunity = true;
-            Projectile.extraUpdates = 0;
-            Projectile.aiStyle = -2;
-            Projectile.DamageType = DamageClass.Melee;
-            Projectile.tileCollide = false;
+        public override Item BaseItem => ModContent.GetModItem(ModContent.ItemType<MajesticGuard>()).Item;
 
-        }
         List<float> oldProjectileRot = new List<float> { };
         List<Vector2> oldProjectilePos = new List<Vector2> { };
-        public override void OnSpawn(IEntitySource source)
+        public override void Spawn(IEntitySource source)
         {
 
             var player = Main.player[Projectile.owner];
-            var modplayer = player.GetModPlayer<CarnagePlayer>();
-            angle = (player.Center - Main.MouseWorld).SafeNormalize(Vector2.One);
-            Projectile.velocity = Vector2.Zero;
-            Projectile.extraUpdates = 0;
-
             if (player.HasBuff<GuardParry>())
             {
                 Projectile.damage = (int)(Projectile.damage * 0.25f);
                 parry = true;
-            }
-            if (angle.X < 0)
-            {
-                player.direction = 1;
-                Projectile.spriteDirection = 1;
-            }
-            else
-            {
-                player.direction = -1;
-                Projectile.spriteDirection = -1;
+                Projectile.scale *= 1.1f;
             }
         }
 
@@ -181,22 +120,22 @@ namespace carnageRework.Items.Reworks.EarthLine
             {
                 adust = MathHelper.ToRadians(-45);
             }
-            var cplayer = player.GetModPlayer<CarnagePlayer>();
+            var cplayer = player.GetModPlayer<WeaponOverhaulPlayer>();
             var armCenter = player.Center - new Vector2(5 * player.direction, 2);
 
             if (Projectile.ai[0] == 0)  // lclick
             {
                 if (!parry)
                 {
-                    var angle2 = MathHelper.ToRadians(MathHelper.SmoothStep(-swingWidth / 2, swingWidth / 2, timer / swingTime));
+                    var angle2 = MathHelper.ToRadians(MathHelper.SmoothStep(-swingWidth / 2, swingWidth / 2, (float)timer / swingTime));
                     Projectile.Center = armCenter - (angle * 70 * (1 + (Projectile.scale - 1) * 0.75f)).RotatedBy(Projectile.spriteDirection * angle2);
                     Projectile.rotation = angle.RotatedBy(Projectile.spriteDirection * angle2).ToRotation() + adust;
                 }
                 else
                 {
 
-                    var angle2 = timer < swingTime / 2 ? MathHelper.ToRadians(MathHelper.SmoothStep(-swingWidth / 2, swingWidth / 2, timer * 2 / swingTime)) : -MathHelper.ToRadians(MathHelper.SmoothStep(-swingWidth / 2, swingWidth / 2, (timer * 2 - swingTime) / swingTime));
-                    if (timer == swingTime / 2)
+                    var angle2 = (float)timer < swingTime / 2 ? MathHelper.ToRadians(MathHelper.SmoothStep(-swingWidth / 2, swingWidth / 2, (float)timer * 2 / swingTime)) : -MathHelper.ToRadians(MathHelper.SmoothStep(-swingWidth / 2, swingWidth / 2, ((float)timer * 2 - swingTime) / swingTime));
+                    if (timer == swingTime / 2f)
                     {
                         Projectile.ResetLocalNPCHitImmunity();
                     }
@@ -205,7 +144,7 @@ namespace carnageRework.Items.Reworks.EarthLine
                 }
 
 
-                if (timer > swingTime)
+                if ((float)timer > swingTime)
                 {
                     Projectile.Kill();
                     player.itemTime = 0;
@@ -214,12 +153,12 @@ namespace carnageRework.Items.Reworks.EarthLine
             if (Projectile.ai[0] == 1) // rclick
             {
                 Projectile.scale = 0.75f;
-                Projectile.Center = player.Center + new Vector2(Projectile.spriteDirection * 10, -45);
+                Projectile.Center = player.Center + new Vector2(Projectile.spriteDirection * 10, -45) * player.gravDir;
                 Projectile.rotation = MathHelper.ToRadians(Projectile.spriteDirection * -45);
-                player.direction = Projectile.spriteDirection;
+                player.direction = Projectile.spriteDirection * (int)player.gravDir;
                 Projectile.damage = 0;
-                cplayer.ParryTime = 2;
-                if (timer > swingTime || player.HasBuff<GuardParry>())
+                if (cplayer.ParryCooldown < 60 * 9) cplayer.ParryTime = 2;
+                if ((float)timer > swingTime || player.HasBuff<GuardParry>())
                 {
                     Projectile.Kill();
                     player.itemTime = 0;
@@ -246,11 +185,11 @@ namespace carnageRework.Items.Reworks.EarthLine
                     var col = i / (60 / 4f) * Projectile.Opacity * 0.1f;
                     if (Projectile.spriteDirection == 1)
                     {
-                        Main.EntitySpriteDraw(texture, oldProjectilePos[i] - Main.screenPosition, null, Color.White * col, oldProjectileRot[i], texture.Size() / 2, 1, SpriteEffects.None, 0);
+                        Main.EntitySpriteDraw(texture, oldProjectilePos[i] - Main.screenPosition, null, Color.White * col, oldProjectileRot[i], texture.Size() / 2, 1, Main.player[Projectile.owner].gravDir == 1 ? SpriteEffects.None : SpriteEffects.FlipVertically, 0);
                     }
                     else
                     {
-                        Main.EntitySpriteDraw(texture, oldProjectilePos[i] - Main.screenPosition, null, Color.White * col, oldProjectileRot[i], texture.Size() / 2, 1, SpriteEffects.FlipHorizontally, 0);
+                        Main.EntitySpriteDraw(texture, oldProjectilePos[i] - Main.screenPosition, null, Color.White * col, oldProjectileRot[i], texture.Size() / 2, 1, Main.player[Projectile.owner].gravDir == 1 ? SpriteEffects.FlipHorizontally : SpriteEffects.FlipVertically, 0);
                     }
                 }
             }
@@ -258,19 +197,10 @@ namespace carnageRework.Items.Reworks.EarthLine
             return true;
         }
 
-        public override void ModifyDamageHitbox(ref Rectangle hitbox)
-        {
-            var center = hitbox.Center.ToVector2();
-            hitbox.Height = (int)(Projectile.height * Projectile.scale);
-            hitbox.Width = (int)(Projectile.width * Projectile.scale);
-            hitbox.Location = (center - new Vector2(hitbox.Width / 2, hitbox.Height / 2)).ToPoint();
-
-        }
-
-        public override void OnHitNPC(NPC target, int damage, float knockback, bool crit)
+        public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone)
         {
             var player = Main.player[Projectile.owner];
-            var cplayer = player.GetModPlayer<CarnagePlayer>();
+            var cplayer = player.GetModPlayer<WeaponOverhaulPlayer>();
             if (target.Calamity().miscDefenseLoss < target.defense)
             {
                 target.Calamity().miscDefenseLoss++;
@@ -287,10 +217,6 @@ namespace carnageRework.Items.Reworks.EarthLine
 
                 player.HealEffect(parry ? 1 : 3);
             }
-        }
-
-        public override void Kill(int timeLeft)
-        {
         }
     }
 

@@ -1,20 +1,18 @@
-using carnageRework.Items.Reworks.EarthLine;
-using Humanizer;
+using CalamityMod;
+using CalamityMod.Items.Weapons.Melee;
+using DozeCalamityWeaponOverhaul.Reworks.Melee.EarthLine;
+using DozeCalamityWeaponOverhaul.Reworks.Summon;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-using ReLogic.Content;
 using System.Collections.Generic;
-using System.Linq;
-using System.Security.Permissions;
 using Terraria;
 using Terraria.Audio;
 using Terraria.DataStructures;
 using Terraria.ID;
 using Terraria.ModLoader;
 
-namespace carnageRework.Items
+namespace DozeCalamityWeaponOverhaul.Common
 {
-    public class CarnagePlayer : ModPlayer
+    public class WeaponOverhaulPlayer : ModPlayer
     {
         public int swingNum = 0;
         public int bloodCount = 0;
@@ -29,6 +27,12 @@ namespace carnageRework.Items
         public int ParryTime = 0;
         public int ParryCooldown = 0;
         public int chargeCooldown = 0;
+        public bool swappedItem = false;
+        public List<int> daggerList = new List<int> { };
+        public float daggerRot = 0;
+        public int daggerNum = 0;
+        public int daggerTimer = 0;
+        public float darkIntensity = 0;
         public override void DrawEffects(PlayerDrawSet drawInfo, ref float r, ref float g, ref float b, ref float a, ref bool fullBright)
         {
 
@@ -59,7 +63,20 @@ namespace carnageRework.Items
         public List<bool> immuneBuffer = new List<bool>() { false };
         public override void ResetEffects()
         {
-            
+            for (var i = 0; i < daggerList.Count; i++)
+            {
+                if (!Main.projectile[daggerList[i]].active || Main.projectile[daggerList[i]].ModProjectile<ExoticDagger>().target != -1)
+                {
+                    daggerList.RemoveAt(i);
+                    if (daggerNum >= daggerList.Count) daggerNum = 0;
+                    i--;
+                }
+            }
+            if (Player.HeldItem.type != ModContent.ItemType<PerfectDark>())
+            {
+                darkIntensity -= 0.05f;
+                if (darkIntensity < 0) darkIntensity = 0;
+            }
             if (bloodCount > bloodCountMax)
             {
                 bloodCount = bloodCountMax;
@@ -69,16 +86,23 @@ namespace carnageRework.Items
                 ExaltedChargeTime = ExaltedChargeMax;
             }
             DashType = 0;
+            //if (ParryTime > 0 && ParryCooldown < 10) Player.immuneTime = 0;
             if (ParryTime > 0) ParryTime--;
-            if (ParryCooldown > 0) {
+            if (ParryCooldown > 0)
+            {
                 ParryCooldown--;
                 if (ParryCooldown == 0)
                 {
                     CombatText.NewText(Player.Hitbox, Color.SkyBlue, "Parry Charged!");
                     SoundEngine.PlaySound(SoundID.Item4);
                 }
-                    }
+            }
             if (chargeCooldown > 0) chargeCooldown--;
+            if (!Player.ItemAnimationActive && !Player.controlUseItem && swappedItem)
+            {
+                Player.selectedItem -= 10;
+                swappedItem = false;
+            }
             /*var ibufferlen = 60;
             if (Player.immune || (Player.immuneTime > 0)) { immuneBuffer.Add(true); } else { immuneBuffer.Add(false); }
             if (immuneBuffer.Count > ibufferlen) immuneBuffer.RemoveAt(0);
@@ -107,14 +131,16 @@ namespace carnageRework.Items
             //Main.NewText(Player.wingTime);
 
         }
+
         public override void PreUpdate()
         {
             if (!ExaltedFullCharge && ExaltedChargeTime >= ExaltedChargeMax)
             {
                 ExaltedFullCharge = true;
                 SoundEngine.PlaySound(SoundID.Item103);
-                for (var i = 0; i < 20;i++) { 
-                    Dust.NewDust(Player.position,Player.width,Player.height, DustID.Shadowflame, Scale: 1.5f);
+                for (var i = 0; i < 20; i++)
+                {
+                    Dust.NewDust(Player.position, Player.width, Player.height, DustID.Shadowflame, Scale: 1.5f);
                 }
             }
             if (ExaltedChargeTime <= 5)
@@ -129,7 +155,8 @@ namespace carnageRework.Items
                     Player.velocity /= Player.velocity.Length() / 20;
                 }
                 Player.gravity = 0;
-                if (DashType == 0) { 
+                if (DashType == 0)
+                {
                     Player.SetImmuneTimeForAllTypes(3);
                 }
                 Player.immuneNoBlink = true;
@@ -137,18 +164,18 @@ namespace carnageRework.Items
             }
         }
 
-        public override bool PreHurt(bool pvp, bool quiet, ref int damage, ref int hitDirection, ref bool crit, ref bool customDamage, ref bool playSound, ref bool genGore, ref PlayerDeathReason damageSource, ref int cooldownCounter)
+        public override bool ConsumableDodge(Player.HurtInfo info)
         {
             if (ParryTime > 0)
             {
-                Player.AddBuff(ModContent.BuffType<GuardParry>(), 60*5);
+                Player.AddBuff(ModContent.BuffType<GuardParry>(), 60 * 5);
                 ParryCooldown = 60 * 10;
                 CombatText.NewText(Player.Hitbox, Color.SkyBlue, "Parried!", true);
-                Player.SetImmuneTimeForAllTypes((Player.longInvince ? 30 : 15));
+                Player.SetImmuneTimeForAllTypes(Player.longInvince ? 60 : 30);
 
-                return false;
+                return true;
             }
-            return base.PreHurt(pvp, quiet, ref damage, ref hitDirection, ref crit, ref customDamage, ref playSound, ref genGore, ref damageSource, ref cooldownCounter);
+            return false;
         }
     }
 }

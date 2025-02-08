@@ -1,10 +1,8 @@
-<?xml version="1.0" encoding="utf-8"?>
+
 <Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\tModLoader.targets" />
   <PropertyGroup>
-    <AssemblyName>carnageRework</AssemblyName>
-    <TargetFramework>net6.0</TargetFramework>
-    <PlatformTarget>AnyCPU</PlatformTarget>
+    <AssemblyName>DozeCalamityWeaponOverhaul</AssemblyName>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
   <ItemGroup>
@@ -13,11 +11,11 @@
     <None Remove="Items\TerraEdgeSwordProj.png" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="tModLoader.CodeAssist" Version="0.1.*" />
+    <None Include="Reworks\Melee\DefiledGreatswordLine\TaintedBladeCausticEdge.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="CalamityMod">
-      <HintPath>..\..\..\..\..\..\Desktop\desk4\tmlPatcher\CalamityMod\CalamityMod.dll</HintPath>
+      <HintPath>..\..\ModReader\CalamityMod\CalamityMod.dll</HintPath>
     </Reference>
   </ItemGroup>
 </Project>

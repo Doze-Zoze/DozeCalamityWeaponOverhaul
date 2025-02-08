@@ -1,34 +1,19 @@
 using CalamityMod;
-using CalamityMod.Buffs.DamageOverTime;
-using CalamityMod.Buffs.StatBuffs;
 using CalamityMod.Buffs.StatDebuffs;
-using CalamityMod.Items.SummonItems;
+using CalamityMod.Graphics.Primitives;
 using CalamityMod.Items.Weapons.Melee;
-using CalamityMod.NPCs.SunkenSea;
-using CalamityMod.Projectiles.Melee;
-using CalamityMod.Projectiles.Summon;
-using CalamityMod.Projectiles.Typeless;
-using Microsoft.CodeAnalysis.Diagnostics;
+using DozeCalamityWeaponOverhaul.Common;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Mono.Cecil;
-using rail;
 using ReLogic.Content;
-using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Drawing.Text;
 using System.Linq;
-using System.Security.Permissions;
 using Terraria;
-using Terraria.Audio;
 using Terraria.DataStructures;
-using Terraria.GameContent.ItemDropRules;
 using Terraria.Graphics.Shaders;
 using Terraria.ID;
 using Terraria.ModLoader;
 
-namespace carnageRework.Items.Reworks
+namespace DozeCalamityWeaponOverhaul.Reworks.Melee
 {
 
     public class TeardropCleaverRework : GlobalItem
@@ -38,7 +23,7 @@ namespace carnageRework.Items.Reworks
         {
             if (item.type == ModContent.ItemType<TeardropCleaver>())
             {
-                item.damage = 90;
+                item.damage = 75;
                 item.useTime = 23 * 2;
                 item.useAnimation = item.useTime;
                 item.useStyle = 1;
@@ -84,7 +69,7 @@ namespace carnageRework.Items.Reworks
                     }
 
                 }
-                if (player.GetModPlayer<CarnagePlayer>().ParryCooldown > 0 && player.altFunctionUse == 2) return false;
+                if (player.GetModPlayer<WeaponOverhaulPlayer>().ParryCooldown > 0 && player.altFunctionUse == 2) return false;
 
                 item.useStyle = ItemUseStyleID.Shoot;
             }
@@ -100,10 +85,8 @@ namespace carnageRework.Items.Reworks
         private int swingWidth = 360;
         private int swingTime = 23 * 2;
         public bool old = false;
-        private bool parry = false;
-        private int projType;
 
-        public PrimitiveTrail TrailDrawer;
+        public PrimitiveType TrailDrawer;
         public static Asset<Texture2D> TrailTexture;
 
         public override string Texture => ModContent.GetModItem(ModContent.ItemType<TeardropCleaver>()).Texture;
@@ -126,6 +109,8 @@ namespace carnageRework.Items.Reworks
             Projectile.DamageType = ModContent.GetModItem(ModContent.ItemType<TeardropCleaver>()).Item.DamageType;
             Projectile.tileCollide = false;
 
+            Projectile.light = 0.25f;
+
             ProjectileID.Sets.TrailingMode[Projectile.type] = 2;
             ProjectileID.Sets.TrailCacheLength[Projectile.type] = 25;
 
@@ -135,11 +120,11 @@ namespace carnageRework.Items.Reworks
         {
 
             var player = Main.player[Projectile.owner];
-            var modplayer = player.GetModPlayer<CarnagePlayer>();
+            var modplayer = player.GetModPlayer<WeaponOverhaulPlayer>();
             swingTime = (int)(swingTime / player.GetWeaponAttackSpeed(ModContent.GetModItem(ModContent.ItemType<TeardropCleaver>()).Item));
             swingTime = swingTime < 1 ? 1 : swingTime;
-            angle = (player.Center - Main.MouseWorld).SafeNormalize(Vector2.One);
             angle = MathHelper.ToRadians(-45).ToRotationVector2();
+            angle.Y *= player.gravDir;
             if ((player.Center - Main.MouseWorld).X < 0)
             {
                 angle.X *= -1;
@@ -150,12 +135,12 @@ namespace carnageRework.Items.Reworks
             if (angle.X < 0)
             {
                 player.direction = 1;
-                Projectile.spriteDirection = 1;
+                Projectile.spriteDirection = 1 * (int)player.gravDir;
             }
             else
             {
                 player.direction = -1;
-                Projectile.spriteDirection = -1;
+                Projectile.spriteDirection = -1 * (int)player.gravDir;
             }
         }
 
@@ -167,7 +152,7 @@ namespace carnageRework.Items.Reworks
             {
                 adust = MathHelper.ToRadians(-45);
             }
-            var cplayer = player.GetModPlayer<CarnagePlayer>();
+            var cplayer = player.GetModPlayer<WeaponOverhaulPlayer>();
             var armCenter = player.Center - new Vector2(5 * player.direction, 2);
 
 
@@ -184,50 +169,53 @@ namespace carnageRework.Items.Reworks
 
             timer++;
             old = true;
-            player.SetCompositeArmFront(true, Player.CompositeArmStretchAmount.Full, (armCenter - Projectile.Center).ToRotation() + MathHelper.ToRadians(90));
+            var armDir = armCenter - Projectile.Center;
+            armDir.Y *= player.gravDir;
+            player.SetCompositeArmFront(true, Player.CompositeArmStretchAmount.Full, armDir.ToRotation() + MathHelper.ToRadians(90));
 
 
         }
-
-        public float TrailWidth(float completionRatio)
-        {
-            return MathHelper.SmoothStep(1, 0.1f, completionRatio) * 20;
-        }
-
-        public Color TrailColor(float completionRatio)
-        {
-            return Color.Lerp(Color.Blue, Color.Orange, completionRatio);
-        }
-
         public override bool PreDraw(ref Color lightColor)
         {
-            if (TrailDrawer == null)
-            {
-                TrailDrawer = new PrimitiveTrail(TrailWidth, TrailColor, null, GameShaders.Misc["CalamityMod:ExobladePierce"]);
-            }
-            Vector2[] trailpos = new Vector2[] { };
-            for (var i = 0; i < Projectile.oldPos.Length; i++)
-            {
-                trailpos.Append(Projectile.oldPos[i]);
-            }
+            if (timer > swingTime - 2) return true;
             Main.spriteBatch.EnterShaderRegion();
             if (TrailTexture == null)
             {
-                TrailTexture = ModContent.Request<Texture2D>("CalamityMod/ExtraTextures/Trails/BasicTrail", (AssetRequestMode)2);
+                TrailTexture = ModContent.Request<Texture2D>("CalamityMod/ExtraTextures/GreyscaleGradients/VoronoiShapes", (AssetRequestMode)2);
             }
-            GameShaders.Misc["CalamityMod:ExobladePierce"].SetShaderTexture(TrailTexture);
+            Vector2 trailOffset = (Projectile.rotation - MathHelper.PiOver4).ToRotationVector2() + Projectile.Size * 0.5f;
+            GameShaders.Misc["CalamityMod:ExobladeSlash"].SetShaderTexture(TrailTexture);
 
-            GameShaders.Misc["CalamityMod:ExobladePierce"].UseImage2("Images/Extra_189");
-            GameShaders.Misc["CalamityMod:ExobladePierce"].UseColor(new Color(0, 10, 100));
+            //GameShaders.Misc["CalamityMod:ExobladeSlash"].UseImage2("Images/Extra_189");
+            GameShaders.Misc["CalamityMod:ExobladeSlash"].UseColor(new Color(118, 95, 77));
 
-            GameShaders.Misc["CalamityMod:ExobladePierce"].UseSecondaryColor(new Color(0, 100, 0));
-            GameShaders.Misc["CalamityMod:ExobladePierce"].Apply();
-            GameShaders.Misc["CalamityMod:ExobladePierce"].Apply();
-            TrailDrawer.Draw(Projectile.oldPos, Projectile.Size * 0.5f - Main.screenPosition, 30, Projectile.oldRot); ;
+            GameShaders.Misc["CalamityMod:ExobladeSlash"].UseSecondaryColor(new Color(117, 151, 164));
+            GameShaders.Misc["CalamityMod:ExobladeSlash"].Shader.Parameters["fireColor"].SetValue(Color.Blue.ToVector3());
+
+            GameShaders.Misc["CalamityMod:ExobladeSlash"].Shader.Parameters["flipped"].SetValue(Projectile.spriteDirection == 1);
+            GameShaders.Misc["CalamityMod:ExobladeSlash"].Apply();
+
+            var positionsToUse = Projectile.oldPos.Take(25).ToArray();
+            for (var i = 0; i < positionsToUse.Length; i++)
+            {
+                if (i >= timer) continue;
+                positionsToUse[i] += (Projectile.oldRot[i] - MathHelper.PiOver4 * (Projectile.spriteDirection == -1 ? 3 : 1)).ToRotationVector2() * 25;
+            }
+            PrimitiveRenderer.RenderTrail(positionsToUse, new(trailWidth, trailColor, (_) => trailOffset, shader: GameShaders.Misc["CalamityMod:ExobladeSlash"]), 25);
             Main.spriteBatch.ExitShaderRegion();
 
             Main.player[Projectile.owner].heldProj = Projectile.whoAmI;
             return true;
+        }
+
+        public float trailWidth(float comp)
+        {
+            return MathHelper.Lerp(10, 0, comp);
+        }
+
+        public Color trailColor(float comp)
+        {
+            return new Color(0, 10, 100);
         }
 
         public override void ModifyDamageHitbox(ref Rectangle hitbox)
@@ -239,7 +227,7 @@ namespace carnageRework.Items.Reworks
 
         }
 
-        public override void OnHitNPC(NPC target, int damage, float knockback, bool crit)
+        public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone)
         {
             var player = Main.player[Projectile.owner];
             target.AddBuff(ModContent.BuffType<TemporalSadness>(), 120);

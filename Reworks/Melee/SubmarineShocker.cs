@@ -2,20 +2,18 @@
 using CalamityMod.Items.Weapons.Melee;
 using CalamityMod.Projectiles.DraedonsArsenal;
 using CalamityMod.Projectiles.Melee;
-using CalamityMod.Projectiles.Melee.Shortswords;
-using carnageRework.Common;
+using DozeCalamityWeaponOverhaul.Common;
 using Microsoft.Xna.Framework;
-using System.Data;
 using Terraria;
 using Terraria.DataStructures;
 using Terraria.ID;
 using Terraria.ModLoader;
 
-namespace carnageRework.Items.Reworks.Shortsword
+namespace DozeCalamityWeaponOverhaul.Reworks.Melee
 {
     public class SubmarineShockerRework : GlobalItem
     {
-        public override void SetDefaults(Item item) 
+        public override void SetDefaults(Item item)
         {
             if (item.type == ModContent.ItemType<SubmarineShocker>())
             {
@@ -34,7 +32,7 @@ namespace carnageRework.Items.Reworks.Shortsword
         public int timer = 0;
         public float swingRadius = 135;
 
-        public override string Texture => "carnageRework/Items/Reworks/Shortsword/SubmarineShocker";
+        public override string Texture => "DozeCalamityWeaponOverhaul/Reworks/Melee/SubmarineShocker";
         public override void SetDefaults()
         {
             Projectile.timeLeft = 2400;
@@ -62,7 +60,7 @@ namespace carnageRework.Items.Reworks.Shortsword
             {
                 adust = MathHelper.ToRadians(-45);
             }
-            var cplayer = player.GetModPlayer<CarnagePlayer>();
+            var cplayer = player.GetModPlayer<WeaponOverhaulPlayer>();
             var armCenter = player.Center - new Vector2(5 * player.direction, 2);
 
 
@@ -76,14 +74,17 @@ namespace carnageRework.Items.Reworks.Shortsword
                 Projectile.Kill();
                 player.itemTime = 0;
                 player.itemAnimation = 0;
-            } else
+            }
+            else
             {
                 player.itemTime = 10;
                 player.itemAnimation = 10;
             }
             timer++;
-            player.SetCompositeArmFront(true, Player.CompositeArmStretchAmount.Full, (armCenter - Projectile.Center).ToRotation() + MathHelper.ToRadians(90));
-            if (chargeCooldown> 0) { chargeCooldown--; }
+            var armDir = armCenter - Projectile.Center;
+            armDir.Y *= player.gravDir;
+            player.SetCompositeArmFront(true, Player.CompositeArmStretchAmount.Full, armDir.ToRotation() + MathHelper.ToRadians(90));
+            if (chargeCooldown > 0) { chargeCooldown--; }
         }
 
         public override bool PreDraw(ref Color lightColor)
@@ -91,24 +92,24 @@ namespace carnageRework.Items.Reworks.Shortsword
             return true;
         }
         public int chargeCooldown = 0;
-        public override void OnHitNPC(NPC target, int damage, float knockback, bool crit)
+        public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone)
         {
-            var chargeCooldown = Main.player[Projectile.owner].GetModPlayer<CarnagePlayer>().chargeCooldown;
+            var chargeCooldown = Main.player[Projectile.owner].GetModPlayer<WeaponOverhaulPlayer>().chargeCooldown;
             target.AddBuff(BuffID.Electrified, 60 * 5);
-            
-            Projectile.NewProjectile(Projectile.GetSource_FromAI(), target.Center, -Vector2.UnitY * 2, ModContent.ProjectileType<Spark>(), (int)((float)damage * 0.7f * (crit? 0.5f : 1)), knockback, Main.myPlayer);
+
+            Projectile.NewProjectile(Projectile.GetSource_FromAI(), target.Center, -Vector2.UnitY * 2, ModContent.ProjectileType<Spark>(), (int)(damageDone * 0.7f * (hit.Crit ? 0.5f : 1)), hit.Knockback, Main.myPlayer);
             if (chargeCooldown == 0)
             {
                 TryToSuperchargeNPC(target);
-                Main.player[Projectile.owner].GetModPlayer<CarnagePlayer>().chargeCooldown = 60;
+                Main.player[Projectile.owner].GetModPlayer<WeaponOverhaulPlayer>().chargeCooldown = 60;
                 for (int i = 0; i < Main.npc.Length; i++)
                 {
-                    if (i != target.whoAmI && Main.npc[i].CanBeChasedBy(base.Projectile) && Main.npc[i].Distance(target.Center) < 240f && TryToSuperchargeNPC(Main.npc[i]))
+                    if (i != target.whoAmI && Main.npc[i].CanBeChasedBy(Projectile) && Main.npc[i].Distance(target.Center) < 240f && TryToSuperchargeNPC(Main.npc[i]))
                     {
                         for (float increment = 0f; increment <= 1f; increment += 0.1f)
                         {
-                            Dust dust = Dust.NewDustPerfect(Vector2.Lerp(target.Center, Main.npc[i].Center,increment), DustID.Electric);
-                            dust.velocity = -dust.position.DirectionTo(target.Center).RotatedBy(MathHelper.ToRadians(MathHelper.Lerp(-50,50, increment)))*10;
+                            Dust dust = Dust.NewDustPerfect(Vector2.Lerp(target.Center, Main.npc[i].Center, increment), DustID.Electric);
+                            dust.velocity = -dust.position.DirectionTo(target.Center).RotatedBy(MathHelper.ToRadians(MathHelper.Lerp(-50, 50, increment))) * 10;
                             dust.scale = 1f;
                             dust.noGravity = true;
                         }
@@ -116,19 +117,19 @@ namespace carnageRework.Items.Reworks.Shortsword
                 }
             }
 
-            
+
         }
 
         public bool TryToSuperchargeNPC(NPC npc)
         {
             for (int i = 0; i < Main.projectile.Length; i++)
             {
-                if (Main.projectile[i].active && Main.projectile[i].type == ModContent.ProjectileType<VoltageStream>() && Main.projectile[i].ai[1] == (float)i)
+                if (Main.projectile[i].active && Main.projectile[i].type == ModContent.ProjectileType<VoltageStream>() && Main.projectile[i].ai[1] == i)
                 {
                     return false;
                 }
             }
-            Projectile.NewProjectileDirect(base.Projectile.GetSource_FromThis(), npc.Center, -Vector2.UnitY*2, ModContent.ProjectileType<Spark>(), (int)((double)base.Projectile.damage * 0.8), 0f, base.Projectile.owner, 0f, npc.whoAmI);
+            Projectile.NewProjectileDirect(Projectile.GetSource_FromThis(), npc.Center, -Vector2.UnitY * 2, ModContent.ProjectileType<Spark>(), (int)(Projectile.damage * 0.8), 0f, Projectile.owner, 0f, npc.whoAmI);
             return true;
         }
     }

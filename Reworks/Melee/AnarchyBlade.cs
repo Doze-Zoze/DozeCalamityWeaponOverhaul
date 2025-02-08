@@ -1,38 +1,17 @@
 using CalamityMod;
-using CalamityMod.Buffs.DamageOverTime;
-using CalamityMod.Buffs.StatBuffs;
-using CalamityMod.Buffs.StatDebuffs;
-using CalamityMod.CalPlayer;
-using CalamityMod.Items.SummonItems;
 using CalamityMod.Items.Weapons.Melee;
 using CalamityMod.NPCs;
-using CalamityMod.NPCs.SunkenSea;
 using CalamityMod.Projectiles.Melee;
-using CalamityMod.Projectiles.Summon;
-using CalamityMod.Projectiles.Typeless;
-using Microsoft.CodeAnalysis.Diagnostics;
+using DozeCalamityWeaponOverhaul.Common;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-using Mono.Cecil;
-using rail;
-using ReLogic.Content;
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Data;
-using System.Drawing.Text;
-using System.Linq;
-using System.Security.Permissions;
-using System.Threading.Channels;
 using Terraria;
-using Terraria.Audio;
 using Terraria.DataStructures;
-using Terraria.GameContent.ItemDropRules;
-using Terraria.Graphics.Shaders;
 using Terraria.ID;
 using Terraria.ModLoader;
 
-namespace carnageRework.Items.Reworks
+namespace DozeCalamityWeaponOverhaul.Reworks.Melee
 {
 
     public class AnarchyBladeRework : GlobalItem
@@ -136,7 +115,7 @@ namespace carnageRework.Items.Reworks
         {
 
             var player = Main.player[Projectile.owner];
-            var modplayer = player.GetModPlayer<CarnagePlayer>();
+            var modplayer = player.GetModPlayer<WeaponOverhaulPlayer>();
 
             Projectile.velocity = Vector2.Zero;
             Projectile.extraUpdates = 0;
@@ -152,7 +131,7 @@ namespace carnageRework.Items.Reworks
                 player.direction = 1;
                 Projectile.spriteDirection = 1;
             }
-            var cplayer = player.GetModPlayer<CarnagePlayer>();
+            var cplayer = player.GetModPlayer<WeaponOverhaulPlayer>();
             var armCenter = player.Center - new Vector2(5 * player.direction, 2);
 
             angle = armCenter.DirectionTo(Main.MouseWorld);
@@ -173,8 +152,8 @@ namespace carnageRework.Items.Reworks
                 player.direction = 1;
                 Projectile.spriteDirection = 1;
             }
-            var cplayer = player.GetModPlayer<CarnagePlayer>();
-            var armCenter = player.Center - new Vector2(5 * player.direction, 2);
+            var cplayer = player.GetModPlayer<WeaponOverhaulPlayer>();
+            var armCenter = player.Center - new Vector2(5 * player.direction, 3 - player.gravDir);
             //angle = (armCenter - Main.MouseWorld).SafeNormalize(Vector2.One);
 
 
@@ -263,7 +242,9 @@ namespace carnageRework.Items.Reworks
 
             timer++;
             old = true;
-            player.SetCompositeArmFront(true, Player.CompositeArmStretchAmount.Full, (armCenter - Projectile.Center).ToRotation() + MathHelper.ToRadians(90));
+            var armDir = armCenter - Projectile.Center;
+            armDir.Y *= player.gravDir;
+            player.SetCompositeArmFront(true, Player.CompositeArmStretchAmount.Full, armDir.ToRotation() + MathHelper.ToRadians(90));
 
 
         }
@@ -285,10 +266,10 @@ namespace carnageRework.Items.Reworks
 
         }
 
-        public override void OnHitNPC(NPC target, int damage, float knockback, bool crit)
+        public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone)
         {
             var player = Main.player[Projectile.owner];
-            Projectile.NewProjectile(Projectile.GetSource_FromAI(), target.Center, Vector2.Zero, ModContent.ProjectileType<BrimstoneBoom>(), damage, knockback, Main.myPlayer);
+            Projectile.NewProjectile(Projectile.GetSource_FromAI(), target.Center, Vector2.Zero, ModContent.ProjectileType<BrimstoneBoom>(), damageDone, hit.Knockback, Main.myPlayer);
             if (player.statLife <= player.statLifeMax2 * 0.5f && Main.rand.NextBool(1) && !target.boss && CalamityGlobalNPC.ShouldAffectNPC(target))
             {
                 target.life = 0;

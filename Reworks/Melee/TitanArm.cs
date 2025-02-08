@@ -1,16 +1,16 @@
 using CalamityMod;
 using CalamityMod.Items.Weapons.Melee;
+using DozeCalamityWeaponOverhaul.Common;
 using Microsoft.Xna.Framework;
+using System;
 using System.Collections.Generic;
-using System.Security.Permissions;
 using Terraria;
 using Terraria.Audio;
 using Terraria.DataStructures;
-using Terraria.GameContent.ItemDropRules;
 using Terraria.ID;
 using Terraria.ModLoader;
 
-namespace carnageRework.Items.Reworks
+namespace DozeCalamityWeaponOverhaul.Reworks.Melee
 {
     public class TitanArmRework : GlobalItem
     {
@@ -141,19 +141,19 @@ namespace carnageRework.Items.Reworks
         {
             var player = Main.player[Projectile.owner];
             float adust = MathHelper.ToRadians(45 + 180);
-            var modplayer = player.GetModPlayer<CarnagePlayer>();
+            var modplayer = player.GetModPlayer<WeaponOverhaulPlayer>();
             int armangle = 20;
             int rotation = 180 + 50;
             int offsetX = 40;
             int timeLeftMax = 30;
-            Vector2 sparkOffset = new Vector2(25, -10);
+            Vector2 sparkOffset = new Vector2(25, -10 * player.gravDir);
             if (player.channel)
             {
                 if (player.velocity.Y == 0) player.velocity *= 0.9f;
                 if (player.velocity.X != 0 && player.velocity.Y == 0) chargeFrames++;
-                if (chargeFrames >= 59)
+                if (chargeFrames >= 120)
                 {
-                    chargeFrames = 59;
+                    chargeFrames = 120;
                     if (!fullCharge)
                     {
                         fullCharge = true;
@@ -163,22 +163,30 @@ namespace carnageRework.Items.Reworks
                 Projectile.timeLeft = timeLeftMax;
                 if (player.direction == 1)
                 {
-                    Projectile.Center = player.Center - new Vector2(offsetX, -8);
+                    Projectile.Center = player.Center - new Vector2(offsetX, -8 * player.gravDir);
                     Projectile.rotation = MathHelper.ToRadians(rotation);
                     Projectile.spriteDirection = 1;
                     player.SetCompositeArmFront(true, Player.CompositeArmStretchAmount.Full, +MathHelper.ToRadians(armangle));
-                    if (player.velocity.X != 0 && player.velocity.Y == 0) Dust.NewDust(Projectile.Center - sparkOffset, 0, 0, DustID.MartianSaucerSpark);
+                    if (player.velocity.X != 0)
+                    {
+                        if (player.velocity.Y == 0) Dust.NewDust(Projectile.Center - sparkOffset, 0, 0, DustID.MartianSaucerSpark);
+                        if (fullCharge) Dust.NewDust(Projectile.Center - sparkOffset, 0, 0, DustID.ShimmerSpark);
+                    }
                 }
                 else
                 {
-                    Projectile.Center = player.Center - new Vector2(-offsetX, -8);
+                    Projectile.Center = player.Center - new Vector2(-offsetX, -8 * (int)player.gravDir);
                     Projectile.rotation = -MathHelper.ToRadians(rotation);
                     Projectile.spriteDirection = -1;
                     player.SetCompositeArmFront(true, Player.CompositeArmStretchAmount.Full, +MathHelper.ToRadians(-armangle));
                     sparkOffset.X *= -1;
                     sparkOffset.X += 5;
 
-                    if (player.velocity.X != 0 && player.velocity.Y == 0) Dust.NewDust(Projectile.Center - sparkOffset, 0, 0, DustID.MartianSaucerSpark);
+                    if (player.velocity.X != 0)
+                    {
+                        if (player.velocity.Y == 0) Dust.NewDust(Projectile.Center - sparkOffset, 0, 0, DustID.MartianSaucerSpark);
+                        if (fullCharge) Dust.NewDust(Projectile.Center - sparkOffset, 0, 0, DustID.ShimmerSpark);
+                    }
                 }
             }
             else
@@ -193,32 +201,39 @@ namespace carnageRework.Items.Reworks
                 {
                     player.velocity += new Vector2(0.40f * player.direction, 0);
                 }
-                if (anim > 17 && player.velocity.X > player.wingAccRunSpeed)
+                if (anim > 17 && (player.velocity.X > player.wingAccRunSpeed * 150 || player.velocity.X < -player.wingAccRunSpeed * 150))
                 {
                     player.velocity *= 0.95f;
 
                 }
-                Projectile.damage = damage * (1 + chargeFrames);
+                Projectile.damage = (int)(damage * (1 + MathF.Pow(chargeFrames / 120f, 2f) * 20));
                 if (swingAnimFrames.Count > anim)
                 {
 
-                    Projectile.Center = player.Center - new Vector2(swingAnimFrames[anim][0] * Projectile.spriteDirection, swingAnimFrames[anim][1]);
-                    Projectile.rotation = MathHelper.ToRadians(swingAnimFrames[anim][2]) * Projectile.spriteDirection;
+                    Projectile.Center = player.Center - new Vector2(swingAnimFrames[anim][0] * Projectile.spriteDirection, swingAnimFrames[anim][1] * player.gravDir);
+                    Projectile.rotation = MathHelper.ToRadians(swingAnimFrames[anim][2]) * Projectile.spriteDirection * player.gravDir;
                     Projectile.scale = swingAnimFrames[anim][3];
+
+                    if (player.gravDir == -1) Projectile.rotation += MathF.PI / 2 * Projectile.spriteDirection;
 
                     if (player.velocity.X != 0) Dust.NewDust(Projectile.Center - sparkOffset, 0, 0, DustID.MartianSaucerSpark);
                 }
                 else
                 {
                     anim = swingAnimFrames.Count - 1;
-                    Projectile.Center = player.Center - new Vector2(swingAnimFrames[anim][0] * Projectile.spriteDirection, swingAnimFrames[anim][1]);
-                    Projectile.rotation = MathHelper.ToRadians(swingAnimFrames[anim][2]) * Projectile.spriteDirection;
+                    Projectile.Center = player.Center - new Vector2(swingAnimFrames[anim][0] * Projectile.spriteDirection, swingAnimFrames[anim][1] * player.gravDir);
+                    Projectile.rotation = MathHelper.ToRadians(swingAnimFrames[anim][2]) * Projectile.spriteDirection * player.gravDir;
                     Projectile.scale = swingAnimFrames[anim][3];
+
+                    if (player.gravDir == -1) Projectile.rotation += MathF.PI / 2f * Projectile.spriteDirection;
 
                     if (player.velocity.X != 0) Dust.NewDust(Projectile.Center - sparkOffset, 0, 0, DustID.MartianSaucerSpark);
                 }
             }
-            player.SetCompositeArmFront(true, Player.CompositeArmStretchAmount.Full, (Projectile.Center + new Vector2(-24 * Projectile.scale * Projectile.spriteDirection, 30 * Projectile.scale).RotatedBy(Projectile.rotation) - player.Center).ToRotation() + MathHelper.ToRadians(-90 - 10 * Projectile.spriteDirection));
+            var armDir = Projectile.Center + new Vector2(-24 * Projectile.scale * Projectile.spriteDirection, 30 * Projectile.scale * player.gravDir) - player.Center;
+            armDir.Y *= player.gravDir;
+            player.SetCompositeArmFront(true, Player.CompositeArmStretchAmount.Full, armDir.ToRotation() + MathHelper.ToRadians(90));
+            player.SetCompositeArmFront(true, Player.CompositeArmStretchAmount.Full, armDir.ToRotation() + MathHelper.ToRadians(-90 - 10 * Projectile.spriteDirection));
         }
         public override void ModifyDamageHitbox(ref Rectangle hitbox)
         {
@@ -237,7 +252,7 @@ namespace carnageRework.Items.Reworks
                 hitbox = new Rectangle() { Location = (Main.player[Projectile.owner].position + new Vector2(40 * Projectile.spriteDirection, -20)).ToPoint(), Width = Main.player[Projectile.owner].width + 40, Height = Main.player[Projectile.owner].height + 40 };
             }
         }
-        public override void OnHitNPC(NPC target, int damage, float knockback, bool crit)
+        public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone)
         {
             Main.player[Projectile.owner].velocity.X *= -1;
             hitEnemy *= -1;

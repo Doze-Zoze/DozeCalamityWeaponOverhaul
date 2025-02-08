@@ -1,4 +1,4 @@
-displayName = Doze's Calamity Melee Reworks
+displayName = Doze's Calamity Weapon Overhaul
 author = DozeZoze
-version = 0.3.1
+version = 1.0
 modReferences = CalamityMod

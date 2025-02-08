@@ -1,100 +1,13 @@
-using CalamityMod.Buffs.DamageOverTime;
-using CalamityMod.Items.SummonItems;
-using CalamityMod.Items.Weapons.Melee;
-using CalamityMod.Projectiles.Melee;
-using CalamityMod.Projectiles.Typeless;
-using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using rail;
 using System;
 using System.Collections.Generic;
-using System.Drawing.Text;
-using System.Security.Permissions;
 using Terraria;
-using Terraria.Audio;
 using Terraria.DataStructures;
-using Terraria.GameContent.ItemDropRules;
-using Terraria.ID;
 using Terraria.ModLoader;
 
-namespace carnageRework.Items.Reworks.DevilsDevastationLine
+namespace DozeCalamityWeaponOverhaul.Reworks.Melee.DevilsDevastationLine
 {
-    public class CatClay : GlobalItem
-    {
-
-        public override bool Shoot(Item item, Player player, EntitySource_ItemUse_WithAmmo source, Vector2 position, Vector2 velocity, int type, int damage, float knockback)
-        {
-            if (item.type == ModContent.ItemType<CatastropheClaymore>())
-            {
-                var modplayer = player.GetModPlayer<CarnagePlayer>();
-
-                if (modplayer.swingNum == 0)
-                {
-                    modplayer.swingNum++;
-                    Projectile.NewProjectile(source, position, velocity, ModContent.ProjectileType<SightSoul>(), damage, knockback, player.whoAmI, 0);
-                }
-                else if (modplayer.swingNum == 1)
-                {
-                    modplayer.swingNum++;
-                    Projectile.NewProjectile(source, position, velocity, ModContent.ProjectileType<MightSoul>(), damage, knockback, player.whoAmI, 1);
-                }
-                else
-                {
-                    Projectile.NewProjectile(source, position, velocity, ModContent.ProjectileType<FrightSoul>(), damage, knockback, player.whoAmI, 2);
-                    modplayer.swingNum = 0;
-                }
-                return false;
-            }
-
-            if (item.type == ModContent.ItemType<Devastation>())
-            {
-                var modplayer = player.GetModPlayer<CarnagePlayer>();
-
-                if (modplayer.swingNum == 0)
-                {
-                    modplayer.swingNum++;
-                    Projectile.NewProjectile(source, position, velocity, ModContent.ProjectileType<SightSoul>(), damage, knockback, player.whoAmI, 0);
-                }
-                else if (modplayer.swingNum == 1)
-                {
-                    modplayer.swingNum++;
-                    Projectile.NewProjectile(source, position, velocity, ModContent.ProjectileType<MightSoul>(), damage, knockback, player.whoAmI, 1);
-                }
-                else if (modplayer.swingNum == 2)
-                {
-                    modplayer.swingNum++;
-                    Projectile.NewProjectile(source, position, velocity, ModContent.ProjectileType<FrightSoul>(), damage, knockback, player.whoAmI, 1);
-                }
-                else if (modplayer.swingNum == 3)
-                {
-                    modplayer.swingNum++;
-                    Projectile.NewProjectile(source, position, velocity, ModContent.ProjectileType<NightSoul>(), damage, knockback, player.whoAmI, 1);
-                }
-                else if (modplayer.swingNum == 4)
-                {
-                    modplayer.swingNum++;
-                    Projectile.NewProjectile(source, position, velocity, ModContent.ProjectileType<LightSoul>(), damage, knockback, player.whoAmI, 1);
-                }
-                else
-                {
-                    modplayer.swingNum++;
-                    Projectile.NewProjectile(source, position, velocity, ModContent.ProjectileType<FlightSoul>(), damage, knockback, player.whoAmI, 2);
-
-                    modplayer.swingNum = 0;
-                }
-                for (var i = 0; i < 2; i++)
-                {
-                    var starpos = new Vector2(Main.MouseWorld.X + Main.rand.Next(-400, 400 + 1), Main.MouseWorld.Y - Main.screenHeight - 160);
-                    Projectile.NewProjectile(source, starpos, starpos.DirectionTo(Main.MouseWorld) * Main.rand.Next(350, 451) / 10 * 1.5f, ModContent.ProjectileType<AstralStar>(), damage, knockback, player.whoAmI, 0);
-                }
-                return false;
-
-            }
-            return base.Shoot(item, player, source, position, velocity, type, damage, knockback);
-        }
-
-    }
 
     public class SightSoul : ModProjectile
     {
@@ -177,7 +90,7 @@ namespace carnageRework.Items.Reworks.DevilsDevastationLine
             return false;
         }
 
-        public override void OnHitNPC(NPC target, int damage, float knockback, bool crit)
+        public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone)
         {
         }
 
@@ -262,7 +175,7 @@ namespace carnageRework.Items.Reworks.DevilsDevastationLine
             return false;
         }
 
-        public override void OnHitNPC(NPC target, int damage, float knockback, bool crit)
+        public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone)
         {
         }
 
@@ -352,7 +265,7 @@ namespace carnageRework.Items.Reworks.DevilsDevastationLine
             return false;
         }
 
-        public override void OnHitNPC(NPC target, int damage, float knockback, bool crit)
+        public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone)
         {
         }
 
@@ -441,7 +354,7 @@ namespace carnageRework.Items.Reworks.DevilsDevastationLine
             return false;
         }
 
-        public override void OnHitNPC(NPC target, int damage, float knockback, bool crit)
+        public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone)
         {
         }
 
@@ -527,7 +440,7 @@ namespace carnageRework.Items.Reworks.DevilsDevastationLine
             return false;
         }
 
-        public override void OnHitNPC(NPC target, int damage, float knockback, bool crit)
+        public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone)
         {
         }
 
@@ -613,7 +526,7 @@ namespace carnageRework.Items.Reworks.DevilsDevastationLine
             return false;
         }
 
-        public override void OnHitNPC(NPC target, int damage, float knockback, bool crit)
+        public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone)
         {
         }
 
